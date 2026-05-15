@@ -1,31 +1,56 @@
+networks:
+  connecthub-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+  kafka_data:
+  sonarqube_data:
+
 services:
-#  mysql:
-#    image: mysql:8.0
-#    container_name: connecthub-mysql
-#    environment:
-#      MYSQL_ROOT_PASSWORD: Karan@2004
-#      MYSQL_DATABASE: connecthub_auth
-#    ports:
-#      - "3306:3306"
-#    volumes:
-#      - mysql_data:/var/lib/mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: connecthub-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: connecthub
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - connecthub-network
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: connecthub-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - connecthub-network
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.4.0
     container_name: connecthub-zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - connecthub-network
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: connecthub-kafka
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -33,10 +58,293 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTEN_NAME: PLAINTEXT_INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - connecthub-network
 
-volumes:
-  mysql_data:
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: connecthub-sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+    networks:
+      - connecthub-network
+
+  service-registry:
+    build:
+      context: ./service-registry
+    container_name: connecthub-service-registry
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+    networks:
+      - connecthub-network
+
+  admin-server:
+    build:
+      context: ./admin-server
+    container_name: connecthub-admin-server
+    restart: unless-stopped
+    depends_on:
+      - service-registry
+    ports:
+      - "8089:8089"
+    environment:
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+    networks:
+      - connecthub-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: connecthub-api-gateway
+    restart: unless-stopped
+    depends_on:
+      - service-registry
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - connecthub-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: connecthub-auth-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8081:8081"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - connecthub-network
+
+  room-service:
+    build:
+      context: ./room-service
+    container_name: connecthub-room-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8082:8082"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+    networks:
+      - connecthub-network
+
+  message-service:
+    build:
+      context: ./message-service
+    container_name: connecthub-message-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8083:8083"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+    networks:
+      - connecthub-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: connecthub-notification-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8084:8084"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+
+    networks:
+      - connecthub-network
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: connecthub-payment-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8085:8085"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+
+      JWT_SECRET: ${JWT_SECRET}
+
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+
+    networks:
+      - connecthub-network
+
+  presence-service:
+    build:
+      context: ./presence-service
+    container_name: connecthub-presence-service
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - service-registry
+    ports:
+      - "8086:8086"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+
+    networks:
+      - connecthub-network
+
+  websocket-service:
+    build:
+      context: ./websocket-service
+    container_name: connecthub-websocket-service
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8087:8087"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+
+      JWT_SECRET: ${JWT_SECRET}
+
+    networks:
+      - connecthub-network
+
+  media-service:
+    build:
+      context: ./media-service
+    container_name: connecthub-media-service
+    restart: unless-stopped
+    depends_on:
+      - mysql
+      - redis
+      - kafka
+      - service-registry
+    ports:
+      - "8088:8088"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      EUREKA_HOST: service-registry
+      EUREKA_PORT: 8761
+
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+
+    networks:
+      - connecthub-network

@@ -1,0 +1,50 @@
+# Build artifacts
+
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Runtime
+.env
+.env.local
+runtime-logs/
+
+# SonarQube
+.sonarqube/
+.scannerwork/
+
+# Miscellaneous
+*.bak
+*.tmp
+scratch/
