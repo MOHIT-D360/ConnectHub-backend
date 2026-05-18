@@ -12,6 +12,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -41,12 +42,14 @@ public class EmailSender implements MessageListener {
             String to = node.get("to").asText();
             String purpose = node.get("purpose").asText();
             String channel = node.has("channel") ? node.get("channel").asText() : "email";
+            log.info("Notification event received: channel={}, purpose={}, recipient={}",
+                    channel, purpose, maskRecipient(to));
 
             if ("sms".equals(channel)) {
                 String otp = node.get("otp").asText();
                 String body = "Your ConnectHub verification code is: " + otp + ". It expires in 5 minutes.";
                 smsSender.send(to, body);
-                log.info("SMS OTP dispatched to {}", to);
+                log.info("SMS OTP dispatched to {}", maskRecipient(to));
                 return;
             }
 
@@ -112,6 +115,7 @@ public class EmailSender implements MessageListener {
         }
 
         String htmlBody = templateEngine.process("otp-email", context);
+        log.info("OTP email prepared: purpose={}, recipient={}", purpose, maskRecipient(to));
         sendHtml(to, subject, htmlBody);
     }
 
@@ -153,6 +157,10 @@ public class EmailSender implements MessageListener {
 
     private void sendHtml(String to, String subject, String htmlBody) {
         try {
+            if (!StringUtils.hasText(mailFrom)) {
+                log.warn("Mail sender username/from address is empty; SMTP authentication may fail");
+            }
+            log.info("Attempting HTML email send: recipient={}, subject={}", maskRecipient(to), subject);
             MimeMessage message = mailSender.createMimeMessage();
             // true indicates multipart message
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -161,9 +169,21 @@ public class EmailSender implements MessageListener {
             helper.setText(htmlBody, true); // true indicates HTML
             helper.setFrom(mailFrom);
             mailSender.send(message);
-            log.info("HTML Email sent to {}: {}", to, subject);
+            log.info("HTML email sent successfully: recipient={}, subject={}", maskRecipient(to), subject);
         } catch (Exception e) {
-            log.error("Failed to send HTML email to {}: {}", to, e.getMessage());
+            log.error("Failed to send HTML email: recipient={}, subject={}, errorType={}, message={}",
+                    maskRecipient(to), subject, e.getClass().getSimpleName(), e.getMessage(), e);
         }
+    }
+
+    private String maskRecipient(String recipient) {
+        if (!StringUtils.hasText(recipient)) {
+            return "unknown";
+        }
+        int at = recipient.indexOf('@');
+        if (at <= 1) {
+            return "***" + (at >= 0 ? recipient.substring(at) : "");
+        }
+        return recipient.charAt(0) + "***" + recipient.substring(at);
     }
 }
