@@ -1,6 +1,12 @@
 server:
   port: ${AUTH_SERVICE_PORT:8081}
   forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: ${SESSION_COOKIE_SAME_SITE:lax}
 
 spring:
   config:
