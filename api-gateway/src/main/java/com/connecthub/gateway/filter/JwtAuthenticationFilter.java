@@ -108,6 +108,22 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        /*
+         * CRITICAL FIX FOR CORS PREFLIGHT:
+         * OPTIONS requests (CORS preflight) must bypass JWT validation entirely.
+         * If we block OPTIONS here, the CORS filter (CorsWebFilter) never gets a chance
+         * to respond with the proper Access-Control-* headers, causing the browser to
+         * reject the cross-origin request.
+         * 
+         * By passing through OPTIONS requests, we allow them to:
+         *   1. Pass through all GlobalFilters
+         *   2. Reach the CorsWebFilter (which responds with 200 OK + CORS headers)
+         *   3. Never actually route to a downstream service (browser discards the body)
+         */
+        if (exchange.getRequest().getMethod().name().equals("OPTIONS")) {
+            return chain.filter(exchange);
+        }
+
         String path = exchange.getRequest().getURI().getPath();
 
         /*

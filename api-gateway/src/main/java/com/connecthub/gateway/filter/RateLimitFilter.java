@@ -74,6 +74,16 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         /*
+         * CORS PREFLIGHT FIX:
+         * Skip rate limiting for OPTIONS requests (CORS preflight).
+         * Preflight requests don't carry user data and should never be rate-limited.
+         * This also ensures they pass through quickly to the CORS filter.
+         */
+        if (exchange.getRequest().getMethod().name().equals("OPTIONS")) {
+            return chain.filter(exchange);
+        }
+
+        /*
          * X-User-Id is added by JwtAuthenticationFilter for authenticated requests.
          * If it's missing, the request is unauthenticated — JwtAuthenticationFilter
          * would have already rejected it for protected routes, and open routes don't
