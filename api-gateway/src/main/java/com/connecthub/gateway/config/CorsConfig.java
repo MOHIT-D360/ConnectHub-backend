@@ -7,6 +7,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,6 +52,9 @@ public class CorsConfig {
     @Value("${FRONTEND_URL:http://localhost:4200}")
     private String frontendUrl;
 
+    @Value("${FRONTEND_ALLOWED_ORIGIN_PATTERNS:}")
+    private String frontendAllowedOriginPatterns;
+
     /**
      * corsWebFilter — Reactive CORS filter for Spring Cloud Gateway.
      * Returns a 200 OK response to preflight OPTIONS requests with proper headers.
@@ -68,19 +72,7 @@ public class CorsConfig {
          * - Local development (both localhost and 127.0.0.1 with any port)
          * - Do NOT use "allowCredentials(true)" with wildcard origins — browsers reject this
          */
-        config.setAllowedOriginPatterns(List.of(
-                frontendUrl,
-
-                // Production Vercel URLs (must update if deploying to different hosts)
-                "https://connect-hub-frontend-one.vercel.app",
-                "https://connect-hub-frontend-git-main-mohit-d360s-projects.vercel.app",
-
-                // Local development (localhost + any port for flexibility)
-                "http://localhost:4200",
-                "http://localhost:*",
-                "http://127.0.0.1:4200",
-                "http://127.0.0.1:*"
-        ));
+        config.setAllowedOriginPatterns(resolveAllowedOriginPatterns());
 
         /*
          * ALLOWED HTTP METHODS:
@@ -160,5 +152,55 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", config);
 
         return new CorsWebFilter(source);
+    }
+
+    private List<String> resolveAllowedOriginPatterns() {
+        List<String> origins = new ArrayList<>();
+
+        addOrigin(origins, frontendUrl);
+
+        /*
+         * Production and preview Vercel URLs. The preview pattern is important because
+         * every branch/deployment can get a different host, while the browser still
+         * sends the exact preview origin during CORS preflight.
+         */
+        addOrigin(origins, "https://connect-hub-frontend-one.vercel.app");
+        addOrigin(origins, "https://connect-hub-frontend.vercel.app");
+        addOrigin(origins, "https://connect-hub-frontend-*.vercel.app");
+        addOrigin(origins, "https://connect-hub-frontend-git-*-mohit-d360s-projects.vercel.app");
+        addOrigin(origins, "https://connect-hub-frontend-git-main-mohit-d360s-projects.vercel.app");
+
+        // Local development (localhost + any port for flexibility)
+        addOrigin(origins, "http://localhost:4200");
+        addOrigin(origins, "http://localhost:*");
+        addOrigin(origins, "http://127.0.0.1:4200");
+        addOrigin(origins, "http://127.0.0.1:*");
+
+        /*
+         * Optional comma-separated deployment override, for example:
+         * FRONTEND_ALLOWED_ORIGIN_PATTERNS=https://app.example.com,https://preview-*.vercel.app
+         */
+        if (frontendAllowedOriginPatterns != null && !frontendAllowedOriginPatterns.isBlank()) {
+            for (String origin : frontendAllowedOriginPatterns.split(",")) {
+                addOrigin(origins, origin);
+            }
+        }
+
+        return origins;
+    }
+
+    private void addOrigin(List<String> origins, String origin) {
+        if (origin == null) {
+            return;
+        }
+
+        String normalizedOrigin = origin.trim();
+        if (normalizedOrigin.endsWith("/")) {
+            normalizedOrigin = normalizedOrigin.substring(0, normalizedOrigin.length() - 1);
+        }
+
+        if (!normalizedOrigin.isBlank() && !origins.contains(normalizedOrigin)) {
+            origins.add(normalizedOrigin);
+        }
     }
 }

@@ -11,6 +11,38 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - ${FRONTEND_URL:http://localhost:4200}
+              - https://connect-hub-frontend-one.vercel.app
+              - https://connect-hub-frontend.vercel.app
+              - https://connect-hub-frontend-*.vercel.app
+              - https://connect-hub-frontend-git-*-mohit-d360s-projects.vercel.app
+              - https://connect-hub-frontend-git-main-mohit-d360s-projects.vercel.app
+              - http://localhost:4200
+              - http://localhost:*
+              - http://127.0.0.1:4200
+              - http://127.0.0.1:*
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders:
+              - '*'
+            exposedHeaders:
+              - Authorization
+              - Content-Type
+              - X-RateLimit-Limit
+              - X-RateLimit-Remaining
+              - X-RateLimit-Reset
+            allowCredentials: true
+            maxAge: 3600
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
       routes:
