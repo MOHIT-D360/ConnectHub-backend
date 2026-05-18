@@ -103,15 +103,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
         log.info("OAuth2 success — redirecting user {} to frontend", user.getUserId());
-        log.info("Refresh token: {}", refreshToken);
 
         // Redirect to frontend with tokens in URL
         // Best practice: short-lived token in URL → frontend reads it immediately and stores
-        response.sendRedirect("http://localhost:4200/oauth2/callback?token=" + accessToken
-                + "&refreshToken=" + refreshToken
-                + "&userId=" + user.getUserId()
-                + "&username=" + user.getUsername()
-                + "&email=" + user.getEmail());
+        String successUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth2/callback")
+                .queryParam("token", accessToken)
+                .queryParam("refreshToken", refreshToken)
+                .queryParam("userId", user.getUserId())
+                .queryParam("username", user.getUsername())
+                .queryParam("email", user.getEmail())
+                .build().toUriString();
+
+        getRedirectStrategy().sendRedirect(request, response, successUrl);
 
     }
 

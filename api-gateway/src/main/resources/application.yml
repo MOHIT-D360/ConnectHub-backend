@@ -48,89 +48,89 @@ spring:
       routes:
         # Auth Routes
         - id: oauth2-route
-          uri: lb://AUTH-SERVICE
+          uri: ${AUTH_SERVICE_URI:lb://AUTH-SERVICE}
           predicates: [Path=/oauth2/**]
         - id: oauth2-callback-route
-          uri: lb://AUTH-SERVICE
+          uri: ${AUTH_SERVICE_URI:lb://AUTH-SERVICE}
           predicates: [Path=/login/oauth2/**]
         - id: auth-service
-          uri: lb://AUTH-SERVICE
+          uri: ${AUTH_SERVICE_URI:lb://AUTH-SERVICE}
           predicates: [Path=/api/v1/auth/**]
         - id: websocket-service-api
-          uri: lb://websocket-service
+          uri: ${WEBSOCKET_SERVICE_URI:lb://websocket-service}
           predicates: [Path=/api/v1/ws/**]
         - id: websocket-service-ws
-          uri: lb:ws://websocket-service
+          uri: ${WEBSOCKET_SERVICE_WS_URI:lb:ws://websocket-service}
           predicates: ["Path=/ws/*/*/websocket,/ws/websocket"]
         - id: websocket-service-sockjs
-          uri: lb://websocket-service
+          uri: ${WEBSOCKET_SERVICE_URI:lb://websocket-service}
           predicates: [Path=/ws/**]
 
         # API Documentation Routes (Swagger)
         - id: auth-service-docs
-          uri: lb://AUTH-SERVICE
+          uri: ${AUTH_SERVICE_URI:lb://AUTH-SERVICE}
           predicates: [Path=/auth-docs/**]
           filters:
             - "RewritePath=/auth-docs/(?<remaining>.*), /${remaining}"
         - id: room-service-docs
-          uri: lb://room-service
+          uri: ${ROOM_SERVICE_URI:lb://room-service}
           predicates: [Path=/room-docs/**]
           filters:
             - "RewritePath=/room-docs/(?<remaining>.*), /${remaining}"
         - id: message-service-docs
-          uri: lb://message-service
+          uri: ${MESSAGE_SERVICE_URI:lb://message-service}
           predicates: [Path=/message-docs/**]
           filters:
             - "RewritePath=/message-docs/(?<remaining>.*), /${remaining}"
         - id: media-service-docs
-          uri: lb://media-service
+          uri: ${MEDIA_SERVICE_URI:lb://media-service}
           predicates: [Path=/media-docs/**]
           filters:
             - "RewritePath=/media-docs/(?<remaining>.*), /${remaining}"
         - id: presence-service-docs
-          uri: lb://presence-service
+          uri: ${PRESENCE_SERVICE_URI:lb://presence-service}
           predicates: [Path=/presence-docs/**]
           filters:
             - "RewritePath=/presence-docs/(?<remaining>.*), /${remaining}"
         - id: notification-service-docs
-          uri: lb://notification-service
+          uri: ${NOTIFICATION_SERVICE_URI:lb://notification-service}
           predicates: [Path=/notification-docs/**]
           filters:
             - "RewritePath=/notification-docs/(?<remaining>.*), /${remaining}"
         - id: websocket-service-docs
-          uri: lb://websocket-service
+          uri: ${WEBSOCKET_SERVICE_URI:lb://websocket-service}
           predicates: [Path=/websocket-docs/**]
           filters:
             - "RewritePath=/websocket-docs/(?<remaining>.*), /${remaining}"
         - id: payment-service-docs
-          uri: lb://PAYMENT-SERVICE
+          uri: ${PAYMENT_SERVICE_URI:lb://PAYMENT-SERVICE}
           predicates: [Path=/payment-docs/**]
           filters:
             - "RewritePath=/payment-docs/(?<remaining>.*), /${remaining}"
 
         # Business Service Routes
         - id: media-public-read
-          uri: lb://media-service
+          uri: ${MEDIA_SERVICE_URI:lb://media-service}
           predicates: [Path=/api/v1/public/media/**]
           filters:
             - "RewritePath=/api/v1/public/media/(?<remaining>.*), /api/v1/media/${remaining}"
         - id: room-service
-          uri: lb://room-service
+          uri: ${ROOM_SERVICE_URI:lb://room-service}
           predicates: [Path=/api/v1/rooms/**]
         - id: message-service
-          uri: lb://message-service
+          uri: ${MESSAGE_SERVICE_URI:lb://message-service}
           predicates: [Path=/api/v1/messages/**]
         - id: media-service
-          uri: lb://media-service
+          uri: ${MEDIA_SERVICE_URI:lb://media-service}
           predicates: [Path=/api/v1/media/**]
         - id: presence-service
-          uri: lb://presence-service
+          uri: ${PRESENCE_SERVICE_URI:lb://presence-service}
           predicates: [Path=/api/v1/presence/**]
         - id: notification-service
-          uri: lb://notification-service
+          uri: ${NOTIFICATION_SERVICE_URI:lb://notification-service}
           predicates: [Path=/api/v1/notifications/**]
         - id: payment-service
-          uri: lb://PAYMENT-SERVICE
+          uri: ${PAYMENT_SERVICE_URI:lb://PAYMENT-SERVICE}
           predicates: [Path=/api/v1/payments/**]
 
   data:
@@ -152,7 +152,9 @@ eureka:
     service-url:
       defaultZone: http://eureka:eureka@${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
   instance:
-    prefer-ip-address: true
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:false}
+    instance-id: ${EUREKA_INSTANCE_INSTANCE_ID:${spring.application.name}:${server.port}}
 
 resilience4j:
   circuitbreaker:

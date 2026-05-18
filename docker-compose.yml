@@ -81,7 +81,8 @@ services:
 
   service-registry:
     build:
-      context: ./service-registry
+      context: .
+      dockerfile: service-registry/Dockerfile
     container_name: connecthub-service-registry
     restart: unless-stopped
     ports:
@@ -89,12 +90,14 @@ services:
     environment:
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      ADMIN_SERVER_HOST: admin-server
     networks:
       - connecthub-network
 
   admin-server:
     build:
-      context: ./admin-server
+      context: .
+      dockerfile: admin-server/Dockerfile
     container_name: connecthub-admin-server
     restart: unless-stopped
     depends_on:
@@ -104,12 +107,16 @@ services:
     environment:
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: admin-server
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: admin-server:8089
     networks:
       - connecthub-network
 
   api-gateway:
     build:
-      context: ./api-gateway
+      context: .
+      dockerfile: api-gateway/Dockerfile
     container_name: connecthub-api-gateway
     restart: unless-stopped
     depends_on:
@@ -122,13 +129,27 @@ services:
       REDIS_PORT: 6379
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: api-gateway:8080
       JWT_SECRET: ${JWT_SECRET}
+      ADMIN_SERVER_HOST: admin-server
+      AUTH_SERVICE_URI: http://auth-service:8081
+      ROOM_SERVICE_URI: http://room-service:8082
+      MESSAGE_SERVICE_URI: http://message-service:8083
+      NOTIFICATION_SERVICE_URI: http://notification-service:8084
+      PAYMENT_SERVICE_URI: http://payment-service:8085
+      PRESENCE_SERVICE_URI: http://presence-service:8086
+      WEBSOCKET_SERVICE_URI: http://websocket-service:8087
+      WEBSOCKET_SERVICE_WS_URI: ws://websocket-service:8087
+      MEDIA_SERVICE_URI: http://media-service:8088
     networks:
       - connecthub-network
 
   auth-service:
     build:
-      context: ./auth-service
+      context: .
+      dockerfile: auth-service/Dockerfile
     container_name: connecthub-auth-service
     restart: unless-stopped
     depends_on:
@@ -148,6 +169,11 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: auth-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: auth-service:8081
+      AUTH_SERVICE_HOST: auth-service
+      ADMIN_SERVER_HOST: admin-server
       JWT_SECRET: ${JWT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -158,7 +184,8 @@ services:
 
   room-service:
     build:
-      context: ./room-service
+      context: .
+      dockerfile: room-service/Dockerfile
     container_name: connecthub-room-service
     restart: unless-stopped
     depends_on:
@@ -178,12 +205,17 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: room-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: room-service:8082
+      ADMIN_SERVER_HOST: admin-server
     networks:
       - connecthub-network
 
   message-service:
     build:
-      context: ./message-service
+      context: .
+      dockerfile: message-service/Dockerfile
     container_name: connecthub-message-service
     restart: unless-stopped
     depends_on:
@@ -203,12 +235,17 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: message-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: message-service:8083
+      ADMIN_SERVER_HOST: admin-server
     networks:
       - connecthub-network
 
   notification-service:
     build:
-      context: ./notification-service
+      context: .
+      dockerfile: notification-service/Dockerfile
     container_name: connecthub-notification-service
     restart: unless-stopped
     depends_on:
@@ -231,6 +268,10 @@ services:
 
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: notification-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: notification-service:8084
+      ADMIN_SERVER_HOST: admin-server
 
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
@@ -242,7 +283,8 @@ services:
 
   payment-service:
     build:
-      context: ./payment-service
+      context: .
+      dockerfile: payment-service/Dockerfile
     container_name: connecthub-payment-service
     restart: unless-stopped
     depends_on:
@@ -265,6 +307,10 @@ services:
 
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: payment-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: payment-service:8085
+      ADMIN_SERVER_HOST: admin-server
 
       JWT_SECRET: ${JWT_SECRET}
 
@@ -276,7 +322,8 @@ services:
 
   presence-service:
     build:
-      context: ./presence-service
+      context: .
+      dockerfile: presence-service/Dockerfile
     container_name: connecthub-presence-service
     restart: unless-stopped
     depends_on:
@@ -290,13 +337,18 @@ services:
 
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: presence-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: presence-service:8086
+      ADMIN_SERVER_HOST: admin-server
 
     networks:
       - connecthub-network
 
   websocket-service:
     build:
-      context: ./websocket-service
+      context: .
+      dockerfile: websocket-service/Dockerfile
     container_name: connecthub-websocket-service
     restart: unless-stopped
     depends_on:
@@ -313,15 +365,21 @@ services:
 
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: websocket-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: websocket-service:8087
+      ADMIN_SERVER_HOST: admin-server
 
       JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
 
     networks:
       - connecthub-network
 
   media-service:
     build:
-      context: ./media-service
+      context: .
+      dockerfile: media-service/Dockerfile
     container_name: connecthub-media-service
     restart: unless-stopped
     depends_on:
@@ -344,6 +402,10 @@ services:
 
       EUREKA_HOST: service-registry
       EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: media-service
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+      EUREKA_INSTANCE_INSTANCE_ID: media-service:8088
+      ADMIN_SERVER_HOST: admin-server
 
       AWS_REGION: ${AWS_REGION}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}

@@ -25,7 +25,9 @@ eureka:
     fetch-registry: true
     register-with-eureka: true
   instance:
-    prefer-ip-address: true
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:false}
+    instance-id: ${EUREKA_INSTANCE_INSTANCE_ID:${spring.application.name}:${server.port}}
 
 management:
   health:

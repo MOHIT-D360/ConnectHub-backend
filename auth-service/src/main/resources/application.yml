@@ -99,9 +99,9 @@ eureka:
     service-url:
       defaultZone: http://eureka:eureka@${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
   instance:
-    hostname: ${AUTH_SERVICE_HOST:localhost}
-    prefer-ip-address: false
-    instance-id: ${AUTH_SERVICE_HOST:localhost}:auth-service:${server.port}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:${AUTH_SERVICE_HOST:localhost}}
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:false}
+    instance-id: ${EUREKA_INSTANCE_INSTANCE_ID:${spring.application.name}:${server.port}}
 
 management:
   endpoints:
