@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${oauth2.redirect.frontend-url:http://localhost:5173}")
+    @Value("${oauth2.redirect.frontend-url:http://localhost:4200}")
     private String frontendUrl;
 
     @Override

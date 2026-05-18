@@ -179,6 +179,8 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GATEWAY_URL: ${GATEWAY_URL:-https://api.connect-hub.dev}
+      FRONTEND_URL: ${FRONTEND_URL:-https://connect-hub-frontend-one.vercel.app}
     networks:
       - connecthub-network
 
