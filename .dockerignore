@@ -3,7 +3,6 @@
 .env
 **/.env
 *.pem
-**/target
 **/.mvn/wrapper/maven-wrapper.jar
 **/.idea
 **/.vscode
