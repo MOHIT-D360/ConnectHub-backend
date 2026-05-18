@@ -36,7 +36,7 @@ public class WebhookController {
 
     private final SubscriptionService subscriptionService;
 
-    @Value("${razorpay.webhook-secret}")
+    @Value("${razorpay.webhook-secret:}")
     private String webhookSecret;
 
     @PostMapping

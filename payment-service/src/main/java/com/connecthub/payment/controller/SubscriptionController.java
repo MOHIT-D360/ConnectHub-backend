@@ -32,7 +32,7 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
 
-    @Value("${razorpay.key-id}")
+    @Value("${razorpay.key-id:}")
     private String razorpayKeyId;
 
     @Value("${razorpay.pro-plan-id:}")

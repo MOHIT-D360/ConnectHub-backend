@@ -52,9 +52,9 @@ eureka:
     instance-id: ${EUREKA_INSTANCE_INSTANCE_ID:${spring.application.name}:${server.port}}
 
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID}
-  key-secret: ${RAZORPAY_KEY_SECRET}
-  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
   pro-plan-id: ${RAZORPAY_PRO_PLAN_ID:}
 
 mail:

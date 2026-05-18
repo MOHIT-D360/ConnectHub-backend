@@ -82,10 +82,10 @@ public class SubscriptionService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final StringRedisTemplate redis;
 
-    @Value("${razorpay.key-id}")
+    @Value("${razorpay.key-id:}")
     private String razorpayKeyId;
 
-    @Value("${razorpay.key-secret}")
+    @Value("${razorpay.key-secret:}")
     private String razorpayKeySecret;
 
     /**
